@@ -3,110 +3,190 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>3D 赛车</title>
+<title>Turbo Circuit 3D</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111;font-family:system-ui,-apple-system,sans-serif}
-#game{position:fixed;inset:0}#hud{position:fixed;top:14px;left:14px;color:#fff;z-index:2;text-shadow:0 2px 4px #000;font-weight:700}
-#hud div{margin:5px 0}.title{font-size:20px}.value{font-size:16px}
-#help{position:fixed;top:14px;right:14px;color:#fff;z-index:2;text-align:right;text-shadow:0 2px 4px #000}
-#controls{position:fixed;inset:auto 0 22px 0;display:flex;justify-content:space-between;padding:0 24px;z-index:3;pointer-events:none}
-.pad{display:flex;gap:12px;pointer-events:auto}.btn{width:68px;height:68px;border:2px solid #ffffff66;border-radius:18px;background:#ffffff22;color:#fff;font-size:28px;backdrop-filter:blur(5px);touch-action:none}
-#start{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;padding:14px 28px;border:0;border-radius:12px;background:#fff;color:#111;font-size:18px;font-weight:700}
-#msg{position:fixed;left:50%;top:34%;transform:translateX(-50%);color:#fff;font-size:30px;font-weight:800;z-index:4;text-shadow:0 3px 8px #000}
-@media(max-width:700px){#help{font-size:12px}.btn{width:62px;height:62px}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07101a;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#game{position:fixed;inset:0}canvas{display:block}
+#hud{position:fixed;left:14px;top:14px;z-index:5;color:#fff;text-shadow:0 2px 5px #000;font-weight:700;pointer-events:none}
+.title{font-size:21px;margin-bottom:7px}.stat{font-size:15px;margin:4px 0}.bar{width:180px;height:8px;background:#ffffff44;border-radius:8px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;width:100%;background:#fff}
+#help{position:fixed;right:14px;top:14px;color:#fff;z-index:5;text-align:right;text-shadow:0 2px 5px #000;font-size:13px;pointer-events:none}
+#menu{position:fixed;inset:0;display:grid;place-items:center;z-index:10;background:#0005}
+.card{width:min(430px,calc(100% - 34px));padding:26px;border-radius:20px;background:#101923eF;color:#fff;text-align:center;box-shadow:0 20px 60px #0008;border:1px solid #ffffff22}
+.card h1{margin:0 0 8px;font-size:32px}.card p{margin:8px 0 20px;color:#c9d4df}
+button{font:inherit}.primary{border:0;border-radius:12px;padding:13px 28px;font-weight:800;font-size:17px;cursor:pointer}.secondary{border:1px solid #ffffff33;background:#ffffff12;color:#fff;border-radius:10px;padding:9px 16px;margin-top:10px}
+#controls{position:fixed;left:0;right:0;bottom:20px;z-index:6;display:flex;justify-content:space-between;padding:0 20px;pointer-events:none}
+.pad{display:flex;gap:10px;pointer-events:auto}.ctrl{width:66px;height:66px;border-radius:18px;border:2px solid #ffffff55;background:#ffffff1c;color:#fff;font-size:28px;backdrop-filter:blur(7px);touch-action:none}
+#nitro{font-size:20px;font-weight:900}.small{font-size:12px;opacity:.8}
+#toast{position:fixed;top:28%;left:50%;transform:translateX(-50%);z-index:8;color:#fff;font-size:30px;font-weight:900;text-shadow:0 3px 9px #000;pointer-events:none;white-space:nowrap}
+@media(min-width:800px){#controls{opacity:.75}.ctrl{width:58px;height:58px}}
 </style>
 </head>
 <body>
 <div id="game"></div>
-<div id="hud"><div class="title">🏁 3D 赛车</div><div>速度：<span id="speed">0</span> km/h</div><div>圈数：<span id="lap">1</span> / 3</div><div>时间：<span id="time">0.0</span> s</div></div>
-<div id="help">WASD / 方向键<br>手机使用下方按钮</div>
-<div id="msg"></div>
-<button id="start">开始比赛</button>
-<div id="controls"><div class="pad"><button class="btn" data-key="left">←</button><button class="btn" data-key="right">→</button></div><div class="pad"><button class="btn" data-key="brake">▼</button><button class="btn" data-key="up">▲</button></div></div>
+<div id="hud">
+ <div class="title">🏁 TURBO CIRCUIT</div>
+ <div class="stat">速度 <b id="speed">0</b> km/h</div>
+ <div class="stat">圈数 <b id="lap">1</b> / 3</div>
+ <div class="stat">排名 <b id="rank">1</b> / 4</div>
+ <div class="stat">氮气</div><div class="bar"><i id="nitroBar"></i></div>
+ <div class="stat">时间 <b id="time">0.0</b>s</div>
+</div>
+<div id="help">WASD / 方向键<br>Shift 氮气 · R 重置</div>
+<div id="toast"></div>
+<div id="controls">
+ <div class="pad"><button class="ctrl" data-k="left">←</button><button class="ctrl" data-k="right">→</button></div>
+ <div class="pad"><button class="ctrl" id="nitro" data-k="nitro">⚡</button><button class="ctrl" data-k="down">▼</button><button class="ctrl" data-k="up">▲</button></div>
+</div>
+<div id="menu"><div class="card"><h1>Turbo Circuit 3D</h1><p>3 圈竞速 · AI 对手 · 漂移 · 氮气加速 · 碰撞</p><button class="primary" id="start">开始比赛</button></div></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js';
 
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x87ceeb);
-scene.fog=new THREE.Fog(0x87ceeb,45,180);
-const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,300);
-camera.position.set(0,5,10);
+scene.background=new THREE.Color(0x79bce5);
+scene.fog=new THREE.Fog(0x79bce5,70,190);
+const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.1,300);
 const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled=true;document.getElementById('game').appendChild(renderer.domElement);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.getElementById('game').appendChild(renderer.domElement);
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x496b35,2));
-const sun=new THREE.DirectionalLight(0xffffff,2.2);sun.position.set(20,40,10);sun.castShadow=true;scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xeaf6ff,0x35552b,2.1));
+const sun=new THREE.DirectionalLight(0xffffff,2.4);
+sun.position.set(20,45,10);sun.castShadow=true;scene.add(sun);
 
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({color:0x4f8a3c}));
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(320,320),new THREE.MeshStandardMaterial({color:0x477f39,roughness:1}));
 ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
 
-const road=new THREE.Mesh(new THREE.RingGeometry(24,34,128),new THREE.MeshStandardMaterial({color:0x30343b}));
+const TRACK_R=29, ROAD_W=9, TOTAL_LAPS=3;
+const road=new THREE.Mesh(new THREE.RingGeometry(TRACK_R-ROAD_W/2,TRACK_R+ROAD_W/2,160),new THREE.MeshStandardMaterial({color:0x30353b,roughness:.9}));
 road.rotation.x=-Math.PI/2;road.receiveShadow=true;scene.add(road);
-const inner=new THREE.Mesh(new THREE.RingGeometry(23.8,24.3,128),new THREE.MeshStandardMaterial({color:0xffffff}));
-inner.rotation.x=-Math.PI/2;scene.add(inner);
-const outer=new THREE.Mesh(new THREE.RingGeometry(33.7,34.2,128),new THREE.MeshStandardMaterial({color:0xffffff}));
-outer.rotation.x=-Math.PI/2;scene.add(outer);
-
-for(let i=0;i<64;i++){
-  const a=i/64*Math.PI*2,r=29;
-  const mark=new THREE.Mesh(new THREE.BoxGeometry(.45,.02,1.8),new THREE.MeshStandardMaterial({color:0xffffff}));
-  mark.position.set(Math.cos(a)*r,.03,Math.sin(a)*r);mark.rotation.y=-a;scene.add(mark);
+for(const r of [TRACK_R-ROAD_W/2-.22,TRACK_R+ROAD_W/2+.22]){
+ const edge=new THREE.Mesh(new THREE.RingGeometry(r-.18,r+.18,160),new THREE.MeshStandardMaterial({color:0xf4f4f4}));
+ edge.rotation.x=-Math.PI/2;scene.add(edge);
 }
-function car(color){
-  const g=new THREE.Group();
-  const body=new THREE.Mesh(new THREE.BoxGeometry(2,0.65,4),new THREE.MeshStandardMaterial({color,metalness:.25,roughness:.45}));
-  body.position.y=.7;body.castShadow=true;g.add(body);
-  const cabin=new THREE.Mesh(new THREE.BoxGeometry(1.5,.65,1.8),new THREE.MeshStandardMaterial({color:0x17202a,roughness:.2,metalness:.3}));
-  cabin.position.set(0,1.2,-.15);cabin.castShadow=true;g.add(cabin);
-  for(const x of [-1.05,1.05])for(const z of [-1.25,1.25]){
-    const w=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.28,16),new THREE.MeshStandardMaterial({color:0x111111}));
-    w.rotation.z=Math.PI/2;w.position.set(x,.42,z);w.castShadow=true;g.add(w);
-  }
-  return g;
+for(let i=0;i<80;i++){
+ const a=i/80*Math.PI*2, mark=new THREE.Mesh(new THREE.BoxGeometry(.35,.025,1.5),new THREE.MeshStandardMaterial({color:0xe9e9e9}));
+ mark.position.set(Math.cos(a)*TRACK_R,.035,Math.sin(a)*TRACK_R);mark.rotation.y=-a;scene.add(mark);
 }
-const player=car(0xe53935);player.position.set(0,.0,29);player.rotation.y=Math.PI;scene.add(player);
-const opponents=[];
-for(let i=0;i<3;i++){const c=car([0x1976d2,0xffc107,0x8e24aa][i]);const a=(i+1)*.45;
-  c.userData={angle:Math.PI/2+a,speed:0.0009+i*.00008,laps:0};scene.add(c);opponents.push(c);}
-const keys={up:false,down:false,left:false,right:false};
-function bind(k,on){keys[k]=on}
-addEventListener('keydown',e=>{const m={ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right'}[e.key];if(m){e.preventDefault();bind(m,true)}});
-addEventListener('keyup',e=>{const m={ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right'}[e.key];if(m)bind(m,false)});
-document.querySelectorAll('.btn').forEach(b=>{const k=b.dataset.key;const on=e=>{e.preventDefault();bind(k,true)};const off=e=>{e.preventDefault();bind(k,false)};b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('pointerleave',off)});
+function box(w,h,d,color,x=0,y=0,z=0){
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,metalness:.15,roughness:.5}));
+ m.position.set(x,y,z);m.castShadow=true;return m;
+}
+function makeCar(color){
+ const g=new THREE.Group();
+ g.add(box(2,0.62,4,color,0,.72,0));
+ g.add(box(1.5,.62,1.75,0x17202a,0,1.18,-.18));
+ g.add(box(1.72,.16,.3,0xf5f5f5,0,1.08,1.8));
+ for(const x of [-1.06,1.06])for(const z of [-1.25,1.25]){
+   const w=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,.3,16),new THREE.MeshStandardMaterial({color:0x101010}));
+   w.rotation.z=Math.PI/2;w.position.set(x,.42,z);w.castShadow=true;g.add(w);
+ }
+ return g;
+}
+const player=makeCar(0xe53935);scene.add(player);
+const colors=[0x1976d2,0xffb300,0x8e24aa],opponents=[];
+for(let i=0;i<3;i++){
+ const c=makeCar(colors[i]);
+ c.userData={progress:(i+1)*.32,speed:.00078+i*.000055,offset:(i-1)*2.4};
+ scene.add(c);opponents.push(c);
+}
+function posAt(progress,offset=0){
+ const a=-Math.PI/2+progress;
+ const r=TRACK_R+offset;
+ return new THREE.Vector3(Math.cos(a)*r,0,Math.sin(a)*r);
+}
+function tangentAngle(progress){return -Math.PI/2+progress+Math.PI/2}
+function setCarPose(c,progress,offset=0){
+ c.position.copy(posAt(progress,offset));c.position.y=.03;
+ c.rotation.y=tangentAngle(progress);
+}
+const obstacles=[];
+for(let i=0;i<10;i++){
+ const p=(i+.5)*Math.PI*2/10+.35;
+ const o=box(1.0,.75,1.0,0xff7043);
+ o.position.copy(posAt(p, i%2?2.5:-2.5));o.position.y=.4;
+ o.rotation.y=-p;scene.add(o);obstacles.push({mesh:o,progress:p});
+}
+const boosts=[];
+for(let i=0;i<4;i++){
+ const p=i*Math.PI*2/4+.7;
+ const b=box(3,.08,1.2,0x2ee6ff,0,.06,0);b.position.copy(posAt(p,0));b.position.y=.06;b.rotation.y=-p;scene.add(b);boosts.push({mesh:b,progress:p});
+}
+const keys={up:false,down:false,left:false,right:false,nitro:false};
+const map={ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right',Shift:'nitro'};
+addEventListener('keydown',e=>{if(map[e.key]){e.preventDefault();keys[map[e.key]]=true}if(e.key==='r'||e.key==='R')resetRace()});
+addEventListener('keyup',e=>{if(map[e.key])keys[map[e.key]]=false});
+document.querySelectorAll('.ctrl').forEach(b=>{
+ const k=b.dataset.k;
+ const on=e=>{e.preventDefault();keys[k]=true;b.setPointerCapture?.(e.pointerId)};
+ const off=e=>{e.preventDefault();keys[k]=false};
+ b.addEventListener('pointerdown',on);b.addEventListener('pointerup',off);b.addEventListener('pointercancel',off);b.addEventListener('lostpointercapture',off);
+});
 
-let running=false,finished=false,startTime=0,lap=1,progress=0,velocity=0;
-const start=document.getElementById('start'),msg=document.getElementById('msg');
-start.onclick=()=>{running=true;finished=false;startTime=performance.now();lap=1;progress=0;velocity=0;player.position.set(0,0,29);player.rotation.y=Math.PI;msg.textContent='';start.style.display='none'};
-function trackPos(t,r=29){return new THREE.Vector3(Math.cos(t)*r,0,Math.sin(t)*r)}
+let running=false,finished=false,startTime=0,progress=0,speed=0,nitro=1,lap=1,boostTimer=0,spin=0;
+function resetRace(){
+ progress=0;speed=0;nitro=1;lap=1;boostTimer=0;spin=0;finished=false;
+ setCarPose(player,0,0);
+ opponents.forEach((c,i)=>{c.userData.progress=(i+1)*.32;setCarPose(c,c.userData.progress,c.userData.offset)});
+ document.getElementById('lap').textContent='1';document.getElementById('rank').textContent='1';
+ document.getElementById('speed').textContent='0';document.getElementById('time').textContent='0.0';
+ document.getElementById('nitroBar').style.width='100%';document.getElementById('menu').style.display='grid';
+}
+function startRace(){
+ resetRace();document.getElementById('menu').style.display='none';running=true;startTime=performance.now();toast('GO!');
+}
+function toast(t){const el=document.getElementById('toast');el.textContent=t;clearTimeout(toast.t);toast.t=setTimeout(()=>el.textContent='',900)}
+document.getElementById('start').onclick=startRace;
+
 function updatePlayer(dt){
-  const max=0.0018;
-  if(keys.up)velocity=Math.min(max,velocity+dt*.0000012);else velocity*=Math.pow(.998,dt/16);
-  if(keys.down)velocity=Math.max(-.0003,velocity-dt*.0000018);
-  const steer=(keys.left?1:0)-(keys.right?1:0);
-  progress+=velocity*dt;
-  const angle=Math.PI/2+progress;
-  const r=29;
-  player.position.copy(trackPos(angle,r));player.position.y=.02;
-  player.rotation.y=-angle+Math.PI/2-steer*.12;
-  const speed=Math.abs(velocity)*52000;
-  document.getElementById('speed').textContent=Math.round(speed);
-  const newLap=Math.floor(Math.max(0,progress)/(Math.PI*2))+1;
-  if(newLap>lap){lap=newLap;if(lap>3){running=false;finished=true;msg.textContent='🏆 比赛完成！';start.textContent='再来一局';start.style.display='block'}document.getElementById('lap').textContent=Math.min(lap,3)+' / 3'}
+ const accel=keys.up?0.00000125:0;
+ speed=Math.min(.00215,speed+accel*dt);
+ if(!keys.up)speed*=Math.pow(.9985,dt/16);
+ if(keys.down)speed=Math.max(0,speed-.0000022*dt);
+ const usingNitro=keys.nitro&&nitro>0&&speed>.00025;
+ if(usingNitro){speed=Math.min(.00315,speed+.0000023*dt);nitro=Math.max(0,nitro-dt*.000055)}
+ else nitro=Math.min(1,nitro+dt*.000012);
+ const steer=(keys.left?1:0)-(keys.right?1:0);
+ if(steer){progress+=speed*dt;spin+=steer*dt*.0025}
+ else spin*=Math.pow(.92,dt/16);
+ progress+=0;
+ const steeringFactor=Math.min(.0009,speed*.55);
+ progress+=steeringFactor*steer*0.18;
+ progress%=Math.PI*2;
+ setCarPose(player,progress,0);
+ player.rotation.y+=spin;
+ if(boostTimer>0)boostTimer-=dt;
+ for(const b of boosts){let d=Math.abs(((progress-b.progress+Math.PI)%(Math.PI*2))-Math.PI);if(d<.055&&boostTimer<=0){boostTimer=1100;speed=Math.min(.0032,speed+.001);toast('⚡ BOOST!')}}
+ for(const o of obstacles){let d=Math.abs(((progress-o.progress+Math.PI)%(Math.PI*2))-Math.PI);if(d<.065){speed*=.82;toast('💥 撞车!')}}
+ const completed=Math.floor(progress/(Math.PI*2));
+ if(progress<.08&&speed>.0005&&player.userData.lastProgress>6){lap++;if(lap<=TOTAL_LAPS)toast('第 '+lap+' 圈');}
+ player.userData.lastProgress=progress;
+ if(lap>TOTAL_LAPS){running=false;finished=true;toast('🏆 FINISH!');setTimeout(()=>{document.getElementById('menu').style.display='grid';document.querySelector('.card h1').textContent='🏆 比赛完成';document.querySelector('.card p').textContent='用时 '+((performance.now()-startTime)/1000).toFixed(2)+' 秒';document.getElementById('start').textContent='再来一局'},700)}
+ document.getElementById('speed').textContent=Math.round(speed*52000);
+ document.getElementById('lap').textContent=Math.min(lap,TOTAL_LAPS);
+ document.getElementById('nitroBar').style.width=(nitro*100)+'%';
 }
 function updateOpponents(dt){
-  opponents.forEach(c=>{c.userData.angle+=c.userData.speed*dt;c.position.copy(trackPos(c.userData.angle,29));c.position.y=.02;c.rotation.y=-c.userData.angle+Math.PI/2});
+ opponents.forEach(c=>{
+   c.userData.progress+=c.userData.speed*dt;
+   if(c.userData.progress>Math.PI*2)c.userData.progress-=Math.PI*2;
+   setCarPose(c,c.userData.progress,c.userData.offset);
+ });
+ const all=[{p:progress,name:'P'}].concat(opponents.map((c,i)=>({p:c.userData.progress,name:String(i+2)})));
+ all.sort((a,b)=>b.p-a.p);
+ document.getElementById('rank').textContent=all.findIndex(x=>x.name==='P')+1;
 }
-const clock=new THREE.Clock();
 function animate(){
-  requestAnimationFrame(animate);const dt=clock.getDelta()*1000;
-  if(running){updatePlayer(dt);updateOpponents(dt);document.getElementById('time').textContent=((performance.now()-startTime)/1000).toFixed(1)}
-  const target=player.position.clone();target.y+=4.2;
-  const behind=new THREE.Vector3(Math.sin(player.rotation.y)*7,5.2,Math.cos(player.rotation.y)*7);
-  camera.position.lerp(player.position.clone().add(behind),.08);camera.lookAt(target);
-  renderer.render(scene,camera);
+ requestAnimationFrame(animate);
+ const dt=Math.min(40,performance.now()-(animate.last||performance.now()));animate.last=performance.now();
+ if(running){updatePlayer(dt);updateOpponents(dt);document.getElementById('time').textContent=((performance.now()-startTime)/1000).toFixed(1)}
+ const follow=player.position.clone().add(new THREE.Vector3(Math.sin(player.rotation.y)*7,4.8,Math.cos(player.rotation.y)*7));
+ camera.position.lerp(follow,.09);camera.lookAt(player.position.x,player.position.y+1,player.position.z);
+ renderer.render(scene,camera);
 }
+resetRace();animate();
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-animate();
 </script>
 </body></html>
